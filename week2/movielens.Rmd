@@ -35,6 +35,12 @@ head(ratings) %>% kable()
 
 ```{r dist-ratings}
 # plot the distribution of rating values (slide 21)
+ratings %>% group_by(rating) %>% 
+  ggplot(mapping = aes(x = rating)) +
+  geom_histogram(bins = 10)
+
+
+
 ```
 
 ## Per-movie stats
@@ -42,24 +48,54 @@ head(ratings) %>% kable()
 ```{r aggregate-by-movie}
 # aggregate ratings by movie, computing mean and number of ratings
 # hint: use the n() function for easy counting within a group
+ratings_by_movie <- ratings %>% group_by(movie_id) %>% 
+      summarize(num_ratings = n(), mean = mean(rating))
+
+
 ```
 
 ```{r dist-movie-popularity}
 # plot distribution of movie popularity (= number of ratings the movie received)
 # hint: try scale_x_log10() for a logarithmic x axis
+ratings_by_movie%>%
+    ggplot(aes(x = num_ratings)) +
+    geom_histogram(bins = 50) +
+    scale_x_log10(label = comma) +
+    xlab('Number of ratings') +
+    ylab('Number of movies')
+
+
+
+
+
 ```
 
 ```{r dist-mean-ratings-by-movie}
 # plot distribution of mean ratings by movie (slide 23)
 # hint: try geom_histogram and geom_density
+ggplot(ratings_by_movie, aes(x = mean)) +
+    geom_density(fill = "grey") +
+    xlab('Number of ratings') +
+    ylab('Density')
+
+
 ```
 
 ```{r cdf-movie-pop}
 # rank movies by popularity and compute the cdf, or fraction of movies covered by the top-k moves (slide 25)
 # hint: use dplyr's rank and arrange functions, and the base R sum and cumsum functions
+
+
+
+
 # store the result in a new data frame so you can use it in creating figure 2 from the paper below
 
 # plot the CDF of movie popularity
+
+ratings_by_movie%>% arrange(desc(num_ratings)) %>%
+  mutate(rank = rank(desc(num_ratings)),frac_ratings=cumsum(num_ratings)/sum(num_ratings))%>%
+  ggplot(aes(x = rank, y = frac_ratings)) +
+  geom_line()
 ```
 
 
@@ -67,12 +103,30 @@ head(ratings) %>% kable()
 
 ```{r aggregate-by-user}
 # aggregate ratings by user, computing mean and number of ratings
+
+ratings %>% group_by(user_id) %>% summarize(num_user_ratings = n(), mean_user_ratings=mean(rating)) 
+
+
 ```
 
 ```{r dist-user-activity}
 # plot distribution of user activity (= number of ratings the user made)
 # hint: try a log scale here
+
+ratings%>%
+    group_by(user_id)%>% summarize(count=n()) %>%
+    ggplot(aes(x = count)) +
+    geom_histogram(bins = 60) +
+    scale_x_log10(label = comma) +
+    xlab('Number of ratings') +
+    ylab('Number of users')
+
+
+
+
 ```
+
+
 
 # Anatomy of the long tail
 
@@ -89,4 +143,10 @@ head(ratings) %>% kable()
 # paper, produce one curve for the 100% user satisfaction level and
 # another for 90%---do not, however, bother implementing the null
 # model (shown in the dashed lines).
+
+
+ratings %>% 
+  group_by(user_id) %>% filter(user_id>=10)
+
+
 ```
