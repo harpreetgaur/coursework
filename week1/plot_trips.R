@@ -83,7 +83,6 @@ trips_with_weather %>%
   ggplot(mapping = aes(x=tmin, y=count)) + geom_point()
   
 
-
 # repeat this, splitting results by whether there was substantial precipitation or not
 # you'll need to decide what constitutes "substantial precipitation" and create a new T/F column to indicate this
 trips_with_weather %>% 
@@ -107,8 +106,10 @@ trips_with_weather %>%
 
 # compute the average number of trips and standard deviation in number of trips by hour of the day
 # hint: use the hour() function from the lubridate package
-trips %>% mutate(hour = hour(starttime)) %>% group_by(ymd,hour) %>%
-  summarize(count = n()) %>% group_by(hour) %>% summarize(avg = mean(count), sd = sd(count))
+trips %>% mutate(hour = hour(starttime)) %>% 
+  group_by(ymd,hour) %>%
+  summarize(count = n()) %>% group_by(hour) %>% 
+  summarize(avg = mean(count), sd = sd(count))
 
 
 
