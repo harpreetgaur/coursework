@@ -145,8 +145,36 @@ ratings%>%
 # model (shown in the dashed lines).
 
 
-ratings %>% 
-  group_by(user_id) %>% filter(user_id>=10)
+
+user_by_10 <- ratings %>% 
+  group_by(user_id) %>% filter(n()>=10) 
+
+movie_rank <- ratings_by_movie %>%
+              mutate(rank = rank(desc(num_ratings)))
+              
+user_by_10 <- inner_join(user_by_10,movie_rank)
 
 
+user_position_100 <- user_by_10 %>% group_by(user_id) %>% 
+               arrange(rank) %>% 
+               summarize(position = quantile(rank,1))
+
+ungroup(user_position_100)
+
+user_position_100 <- user_position_100 %>% group_by(position) %>% summarize(p_count = n()) %>% 
+              arrange((position)) %>% mutate(rank = rank(desc(p_count)), 
+            frac_ratings = cumsum(p_count)/sum(p_count)) 
+         
+              
+
+user_position_90 <- user_by_10 %>% group_by(user_id) %>% 
+               arrange(rank) %>% 
+               summarize(position = quantile(rank,0.9))
+
+  
+user_position_90 <- user_position_90 %>% group_by(position) %>% summarize(p_count = n()) %>% 
+              arrange((position)) %>% mutate(rank = rank(desc(p_count)), 
+            frac_ratings = cumsum(p_count)/sum(p_count)) 
+          
+ggplot()+geom_line(data=user_position_100, aes(x=position, y=frac_ratings))+geom_line(data=user_position_90, aes(x=position, y=frac_ratings))
 ```
