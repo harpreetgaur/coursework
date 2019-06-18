@@ -176,5 +176,5 @@ user_position_90 <- user_position_90 %>% group_by(position) %>% summarize(p_coun
               arrange((position)) %>% mutate(rank = rank(desc(p_count)), 
             frac_ratings = cumsum(p_count)/sum(p_count)) 
           
-ggplot()+geom_line(data=user_position_100, aes(x=position, y=frac_ratings))+geom_line(data=user_position_90, aes(x=position, y=frac_ratings))
+ggplot()+geom_line(data=user_position_100, aes(x=position, y=frac_ratings))+geom_line(data=user_position_90, aes(x=position, y=frac_ratings)) + geom_vline(xintercept = 3000, linetype = "dashed")
 ```
