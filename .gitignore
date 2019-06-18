@@ -3,3 +3,8 @@
 *~
 *.zip
 .ipynb_checkpoints
+*.csv
+*.tsv
+*.dat
+*.RData
+*.RDataTmp
