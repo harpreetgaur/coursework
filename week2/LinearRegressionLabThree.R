@@ -30,11 +30,13 @@ confint(lm.fit)
 #predict can be used to produce conf intervals
 predict (lm.fit,data.frame(lstat=c(5,10 ,15)),interval ="confidence")
 
-#
+
 
 predict (lm.fit,data.frame(lstat=c(5,10 ,15)),interval ="prediction")
 
 
+lm.fit= lm(medv???lstat+age, data=Boston)
+summary (lm.fit)
 
 
 

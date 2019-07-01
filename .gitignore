@@ -9,3 +9,4 @@
 *.RData
 *.RDataTmp
 week2/ngrams/googlebooks*
+*.gz

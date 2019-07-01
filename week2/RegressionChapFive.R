@@ -14,3 +14,4 @@ summary(lm_fit)
 View(new_data)
 
 confint(lm_fit)
+
