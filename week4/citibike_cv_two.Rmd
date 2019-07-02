@@ -1,0 +1,331 @@
+---
+title: "citibike_cv_two"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r loading data}
+load_data <- read_tsv("~/coursework/week4/trips_per_day.tsv")
+
+library(dplyr)
+library(tidyverse)
+library(modelr)
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r splitting into train and test and plotting linear model}
+
+shuffled <- sample_frac(load_data)
+
+
+#splitting the shuffled data
+train<-shuffled[1:292,]
+test<-shuffled[293:365,]
+
+#seeing if the split data is unique
+intersect(train$date,test$date)
+
+
+#training the model
+train_fit <- lm(num_trips~tmin, data = train)
+summary(train_fit)
+
+?add_predictions
+
+#Adding predictions
+trained_data <- add_predictions(train, train_fit)
+
+validation_data <- add_predictions(test, train_fit)
+
+
+ggplot() + geom_line(data = validation_data, mapping = aes(x=tmin, y=pred), 
+            color = "red") + geom_point(data = validation_data, 
+            mapping=aes(x=tmin, y=num_trips), color = "green") +
+            geom_line(data = trained_data, mapping =
+            aes(x=tmin, y=pred), color = "black") +
+            geom_point(data = trained_data, 
+            mapping=aes(x=tmin, y=num_trips), color = "blue")
+
+
+
+#Calculating RMSE and r2 for train and validation data
+
+rmse_train <- rmse(train_fit, trained_data)
+rmse_train
+
+rmse_validate <- rmse(train_fit, validation_data)
+rmse_validate
+
+r2_train <- rsquare(train_fit, trained_data)
+r2_train
+
+r2_validate <- rsquare(train_fit, validation_data)
+r2_validate
+
+
+```
+
+
+```{r Quadratic models}
+
+#Training model for degree 2
+train_fit_quad <- lm(num_trips~poly(tmin, 2, raw = T), data = train)
+
+
+#adding predictions
+trained_data_quad <- add_predictions(train, train_fit_quad)
+
+validation_data_quad <- add_predictions(test, train_fit_quad)
+
+
+# plotting the validation model
+ggplot() + geom_line(data = validation_data_quad, mapping = aes(x=tmin, y=pred), 
+            color = "red") + geom_point(data = validation_data_quad, 
+            mapping=aes(x=tmin, y=num_trips), color = "green") +
+            geom_line(data = trained_data_quad, mapping =
+            aes(x=tmin, y=pred), color = "black") +
+            geom_point(data = trained_data_quad, 
+            mapping=aes(x=tmin, y=num_trips), color = "blue")
+
+
+#Calculating RMSE and R2 values for degree 2
+
+rmse_train <- rmse(train_fit_quad, trained_data_quad)
+rmse_train
+
+rmse_validate <- rmse(train_fit_quad, validation_data_quad)
+rmse_validate
+
+r2_train <- rsquare(train_fit_quad, trained_data_quad)
+r2_train
+
+r2_validate <- rsquare(train_fit_quad, validation_data_quad)
+r2_validate
+
+
+```
+
+```{r  Doing it K times }
+K <- 1:8
+
+# creating vectors to store rmse and r2 for train and validation
+v_rmse_train <- rep(NA, 8)
+v_rmse_validate <- rep(NA, 8)
+
+v_r2_train <- rep(NA, 8)
+v_r2_validate <- rep(NA, 8)
+
+for (k in K){
+
+  train_fit_k<- lm(num_trips~poly(tmin, k, raw = T), data = train)
+
+  trained_data_k <- add_predictions(train, train_fit_k)
+
+  validation_data_k <- add_predictions(test, train_fit_k)
+
+
+#Calculating RMSE and R square
+
+v_rmse_train[k] <- rmse(train_fit_k, trained_data_k)
+v_rmse_validate[k] <- rmse(train_fit_k, validation_data_k)
+
+
+v_r2_train[k] <- rsquare(train_fit_k, trained_data_k)
+v_r2_validate[k] <- rsquare(train_fit_k, validation_data_k)
+
+
+}
+
+ggplot() + geom_line(data = data.frame(cbind(K, v_rmse_train, v_r2_train)), 
+          mapping = aes(x=K, y=v_r2_train),color = "red") +
+          geom_line(data = data.frame(cbind(K, v_rmse_validate, v_r2_validate)), 
+          mapping = aes(x=K, y=v_r2_validate),color = "blue")
+        
+ggplot() + geom_line(data = data.frame(cbind(K, v_rmse_train, v_r2_train)), 
+          mapping = aes(x=K, y=v_rmse_train),color = "red") +
+          geom_line(data = data.frame(cbind(K, v_rmse_validate, v_r2_validate)), 
+          mapping = aes(x=K, y=v_rmse_validate),color = "blue")
+        
+best_model <- which(v_rmse_validate == min(v_rmse_validate))
+K[best_model]
+
+
+```
+```{r Picking best model}
+#Training model for degree 4 best model
+
+#Used this logic in order to find best model
+best_model <- which(v_rmse_validate == min(v_rmse_validate))
+best_model
+
+
+train_fit_best <- lm(num_trips~poly(tmin, best_model, raw = T), data = train)
+
+
+#adding predictions
+trained_data_best <- add_predictions(train, train_fit_best)
+
+validation_data_best <- add_predictions(test, train_fit_best)
+
+
+# plotting the validation model
+ggplot() + geom_line(data = validation_data_best, mapping = aes(x=tmin, y=pred), 
+            color = "red") + geom_point(data = validation_data_best, 
+            mapping=aes(x=tmin, y=num_trips), color = "green") +
+            geom_line(data = trained_data_best, mapping =
+            aes(x=tmin, y=pred), color = "black") +
+            geom_point(data = trained_data_best, 
+            mapping=aes(x=tmin, y=num_trips), color = "blue")
+
+
+#Calculating RMSE and R2 values for degree 2
+
+rmse_train <- rmse(train_fit_best, trained_data_best)
+rmse_train
+
+rmse_validate <- rmse(train_fit_best, validation_data_best)
+rmse_validate
+
+r2_train <- rsquare(train_fit_best, trained_data_best)
+r2_train
+
+r2_validate <- rsquare(train_fit_quad, validation_data_best)
+r2_validate
+
+
+
+
+```
+
+
+
+```{r }
+#Performing K-fold cross validation
+
+shuffled_cross_val <- sample_frac(load_data)
+
+
+n <- 73
+nr <- nrow(shuffled_cross_val)
+folds<-split(shuffled_cross_val, rep(1:ceiling(nr/n), each=n, length.out=nr))
+
+f <- 1:5
+K <- 1:8
+
+v_rmse_train_cross_val <- rep(NA, 5)
+v_rmse_validate_cross_val <- rep(NA, 5)
+
+
+average_se <- rep(NA, 8)
+average_rmse<- rep(NA, 8)
+
+  
+for (k in K){
+    
+  for (i in f){
+  test_set <- folds[i]
+  train_set <- folds[-i]
+
+train_fit_cross_val<-
+    lm(shuffled_cross_val$num_trips~poly(shuffled_cross_val$tmin, k, raw = T),
+       data = train_set)
+
+  trained_data_cross_val <- add_predictions(train_set, train_fit_cross_val)
+
+  validation_data_cross_val <- add_predictions(test_set, train_fit_cross_val)
+
+
+#Calculating RMSE and R square
+
+  v_rmse_train_cross_val[i] <- rmse(train_fit_cross_val, trained_data_cross_val)
+  v_rmse_validate_cross_val[i] <- rmse(train_fit_cross_val,
+                                     validation_data_cross_val)
+
+
+}
+  
+average_rmse[k] <- mean(v_rmse_validate_cross_val)
+
+average_r2[k] <- mean(v_r2_validate_cross_val)
+  
+  
+}
+
+average_rmse
+
+average_se <- sd(average_rmse)/sqrt(length(average_rmse))
+average_se
+
+
+
+```
+
+```{r predict}
+shuffled_predict <- sample_frac(load_data)
+
+
+#splitting the shuffled data
+train<-shuffled_predict[1:292,]
+test<-shuffled_predict[293:365,]
+
+#seeing if the split data is unique
+intersect(train$date,test$date)
+
+View(shuffled_predict)
+
+#training the model
+train_fit <- lm(num_trips~tmin, data = train)
+summary(train_fit)
+
+
+#Adding predictions
+trained_data <- add_predictions(train, train_fit)
+
+validation_data <- add_predictions(test, train_fit)
+
+
+ggplot() + geom_line(data = validation_data, mapping = aes(x=tmin, y=pred), 
+            color = "red") + geom_point(data = validation_data, 
+            mapping=aes(x=tmin, y=num_trips), color = "green") +
+            geom_line(data = trained_data, mapping =
+            aes(x=tmin, y=pred), color = "black") +
+            geom_point(data = trained_data, 
+            mapping=aes(x=tmin, y=num_trips), color = "blue")
+
+
+
+#Calculating RMSE and r2 for train and validation data
+
+rmse_train <- rmse(train_fit, trained_data)
+rmse_train
+
+rmse_validate <- rmse(train_fit, validation_data)
+rmse_validate
+
+r2_train <- rsquare(train_fit, trained_data)
+r2_train
+
+r2_validate <- rsquare(train_fit, validation_data)
+r2_validate
+
+
+```
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
